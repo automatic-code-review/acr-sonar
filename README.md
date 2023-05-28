@@ -1,6 +1,7 @@
 # acr-sonar
 
 Arquivo config.json
+
 ```json
 {
     "url": "",
