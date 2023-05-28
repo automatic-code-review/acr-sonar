@@ -1,0 +1,13 @@
+def review(config):
+    path_target = config['path_target']
+    path_source = config['path_source']
+
+    merge = config['merge']
+    project_id = merge['project_id']
+    merge_request_id = merge['merge_request_id']
+    
+    comments = []
+    
+    # TODO IMPLEMENTAR EXTENSION
+
+    return comments
