@@ -122,7 +122,13 @@ class SonarClient:
                 ]
                 comments.append({
                     'id': issue_hash,
-                    'comment': "<br>".join(details)
+                    'comment': '<br>'.join(details),
+                    'position': {
+                        'language': 'c++',
+                        'path': issue_path,
+                        'startInLine': issue_start_line,
+                        'endInLine': issue_end_line,
+                    }
                 })
 
         self.delete_project(__PROJECT_KEY)
