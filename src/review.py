@@ -1,3 +1,5 @@
+import os
+
 from src.sonar_client import SonarClient
 
 
@@ -10,7 +12,7 @@ def review(config):
     merge_request_id = merge['merge_request_id']
 
     sonar_client = SonarClient(
-        sonar_token=config['token'],
+        sonar_token=__get_by_config_or_enviroment(config, 'token', 'SONAR_TOKEN'),
         sonar_url=config['url'],
         auth_type=config['auth_type'],
         login_password=__get_or_default(config, 'auth_password'),
@@ -34,3 +36,12 @@ def __get_or_default(obj, name, default=None):
         return obj[name]
 
     return default
+
+
+def __get_by_config_or_enviroment(obj, name, name_enviroment):
+    retorno = __get_or_default(obj, name)
+
+    if retorno is None:
+        retorno = os.environ.get(name_enviroment)
+
+    return retorno
