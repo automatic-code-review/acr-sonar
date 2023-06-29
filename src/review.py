@@ -13,8 +13,8 @@ def review(config):
         sonar_token=config['token'],
         sonar_url=config['url'],
         auth_type=config['auth_type'],
-        login_password=config['auth_password'],
-        login_username=config['auth_username'],
+        login_password=__get_or_default(config, 'auth_password'),
+        login_username=__get_or_default(config, 'auth_username'),
     )
 
     comments = sonar_client.get_comments(
@@ -27,3 +27,10 @@ def review(config):
     )
 
     return comments
+
+
+def __get_or_default(obj, name, default=None):
+    if name in obj:
+        return obj[name]
+
+    return default
