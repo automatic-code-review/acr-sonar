@@ -35,7 +35,9 @@ class SonarClient:
             f"-Dsonar.scm.exclusions.disabled=true",
         ]
         command = " ".join(params)
-        os.system(command)
+        retorno = os.system(command)
+        if retorno != 0:
+            raise OSError("Failed to run sonar scanner")
 
     def is_queue_empty(self):
         endpoint = f"{self.sonar_url}/api/analysis_reports/is_queue_empty"
