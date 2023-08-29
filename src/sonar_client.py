@@ -69,14 +69,17 @@ class SonarClient:
 
         self.delete_project(__PROJECT_KEY)
         self.create_project(__PROJECT_KEY, __PROJECT_KEY)
-        self.run_scanner(__PROJECT_KEY, scanner_home, path_target)
+
+        if os.path.exists(path_target):
+            self.run_scanner(__PROJECT_KEY, scanner_home, path_target)
 
         while not self.is_queue_empty():
             sleep(1)
 
         issues_target = self.list_issues(__PROJECT_KEY)
 
-        self.run_scanner(__PROJECT_KEY, scanner_home, path_source)
+        if os.path.exists(path_source):
+            self.run_scanner(__PROJECT_KEY, scanner_home, path_source)
 
         while not self.is_queue_empty():
             sleep(1)
