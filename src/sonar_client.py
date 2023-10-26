@@ -118,6 +118,8 @@ class SonarClient:
                 issue_start_line = issue_source['textRange']['startLine']
                 issue_end_line = issue_source['textRange']['endLine']
                 issue_rule = issue_source['rule']
+                issue_line = issue_source['line']
+
                 details = [
                     f"Type: {issue_rule}<br>",
                     f"<b>Message: {issue_message}</b><br>",
@@ -126,7 +128,7 @@ class SonarClient:
                     f"Linha final: {issue_end_line}",
                 ]
                 comments.append({
-                    'id': issue_hash,
+                    'id': issue_hash + str(issue_line),
                     'comment': '<br>'.join(details),
                     'position': {
                         'language': 'c++',
