@@ -64,19 +64,11 @@ class SonarClient:
         auth = (self.login_username, self.login_password)
         return auth
 
-    def get_comments(self, scanner_home, path_source, path_target, project_id, merge_request_id, rules):
+    def get_comments(self, scanner_home, path_source, project_id, merge_request_id, rules):
         __PROJECT_KEY = f"code-review-{project_id}-{merge_request_id}"
 
         self.delete_project(__PROJECT_KEY)
         self.create_project(__PROJECT_KEY, __PROJECT_KEY)
-
-        if os.path.exists(path_target):
-            self.run_scanner(__PROJECT_KEY, scanner_home, path_target)
-
-        while not self.is_queue_empty():
-            sleep(1)
-
-        issues_target = self.list_issues(__PROJECT_KEY)
 
         if os.path.exists(path_source):
             self.run_scanner(__PROJECT_KEY, scanner_home, path_source)
@@ -89,54 +81,38 @@ class SonarClient:
         comments = []
 
         for issue_source in issues_source:
-            found = False
-
             if issue_source['rule'] not in rules:
                 continue
 
             if 'hash' not in issue_source:
                 continue
 
-            hash_source = issue_source['hash']
+            issue_message = issue_source['message']
+            issue_hash = issue_source['hash']
+            issue_path = issue_source['component']
+            issue_path = issue_path[issue_path.index(":") + 1:]
+            issue_start_line = issue_source['textRange']['startLine']
+            issue_end_line = issue_source['textRange']['endLine']
+            issue_rule = issue_source['rule']
+            issue_line = issue_source['line']
 
-            for issue_target in issues_target:
-
-                if 'hash' not in issue_target:
-                    continue
-
-                hash_target = issue_target['hash']
-
-                if hash_source == hash_target:
-                    found = True
-                    break
-
-            if not found:
-                issue_message = issue_source['message']
-                issue_hash = issue_source['hash']
-                issue_path = issue_source['component']
-                issue_path = issue_path[issue_path.index(":") + 1:]
-                issue_start_line = issue_source['textRange']['startLine']
-                issue_end_line = issue_source['textRange']['endLine']
-                issue_rule = issue_source['rule']
-                issue_line = issue_source['line']
-
-                details = [
-                    f"Type: {issue_rule}<br>",
-                    f"<b>Message: {issue_message}</b><br>",
-                    f"Arquivo: {issue_path}",
-                    f"Linha inicial: {issue_start_line}",
-                    f"Linha final: {issue_end_line}",
-                ]
-                comments.append({
-                    'id': issue_hash + str(issue_line),
-                    'comment': '<br>'.join(details),
-                    'position': {
-                        'language': 'c++',
-                        'path': issue_path,
-                        'startInLine': issue_start_line,
-                        'endInLine': issue_end_line,
-                    }
-                })
+            details = [
+                f"Type: {issue_rule}<br>",
+                f"<b>Message: {issue_message}</b><br>",
+                f"Arquivo: {issue_path}",
+                f"Linha inicial: {issue_start_line}",
+                f"Linha final: {issue_end_line}",
+            ]
+            comments.append({
+                'id': issue_hash + str(issue_line),
+                'comment': '<br>'.join(details),
+                'position': {
+                    'language': 'c++',
+                    'path': issue_path,
+                    'startInLine': issue_start_line,
+                    'endInLine': issue_end_line,
+                }
+            })
 
         self.delete_project(__PROJECT_KEY)
 

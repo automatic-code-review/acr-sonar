@@ -1,1 +1,2 @@
-requests==2.31.0
+requests==2.32.3
+automatic_code_review_commons==1.0.5
