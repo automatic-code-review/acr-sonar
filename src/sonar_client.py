@@ -1,3 +1,4 @@
+import hashlib
 import os
 from time import sleep
 
@@ -104,7 +105,7 @@ class SonarClient:
                 f"Linha final: {issue_end_line}",
             ]
             comments.append({
-                'id': issue_hash + str(issue_line),
+                'id': self.__generate_md5(f"{issue_hash}{issue_line}{issue_message}{issue_path}"),
                 'comment': '<br>'.join(details),
                 'position': {
                     'language': 'c++',
@@ -117,3 +118,10 @@ class SonarClient:
         self.delete_project(__PROJECT_KEY)
 
         return comments
+
+    @staticmethod
+    def __generate_md5(string):
+        md5_hash = hashlib.md5()
+        md5_hash.update(string.encode('utf-8'))
+
+        return md5_hash.hexdigest()
