@@ -4,7 +4,7 @@ from src.sonar_client import SonarClient
 
 
 def review(config):
-    path_source = config['path_source']
+    path_source = config['path_source_v2']
 
     merge = config['merge']
     project_id = merge['project_id']
@@ -21,9 +21,13 @@ def review(config):
     comments = sonar_client.get_comments(
         scanner_home=config['scanner_home'],
         path_source=path_source,
+        changes=merge['changes'],
         project_id=project_id,
         merge_request_id=merge_request_id,
         rules=config['rules'],
+        rules_deny=config.get("rulesDeny", []),
+        sonar_extra_args=config.get("sonarExtraArgs", ""),
+        sonar_scanner_pre_command=config.get("sonarScannerPreCommand", ""),
     )
 
     return comments

@@ -25,16 +25,22 @@ class SonarClient:
         response = requests.post(endpoint, params=data, headers=self._get_headers(), auth=self._get_auth())
         response.raise_for_status()
 
-    def run_scanner(self, project_key, scanner_home, source_path):
+    def run_scanner(self, project_key, scanner_home, source_path, changes, sonar_extra_args):
+        inclusions = []
+        for change in changes:
+            inclusions.append(change['new_path'])
+        inclusions = ",".join(inclusions)
         params = [
             f"cd {source_path} &&",
             f"{scanner_home}/bin/sonar-scanner",
             f"-Dsonar.projectKey={project_key}",
-            f"-Dsonar.sources=.",
+            f"-Dsonar.inclusions={inclusions}",
             f"-Dsonar.host.url={self.sonar_url}",
             f"-Dsonar.login={self.sonar_token}",
             f"-Dsonar.scm.exclusions.disabled=true",
         ]
+        if len(sonar_extra_args) > 0:
+            params.append(sonar_extra_args)
         command = " ".join(params)
         retorno = os.system(command)
         if retorno != 0:
@@ -65,14 +71,35 @@ class SonarClient:
         auth = (self.login_username, self.login_password)
         return auth
 
-    def get_comments(self, scanner_home, path_source, project_id, merge_request_id, rules):
+    @staticmethod
+    def is_path_presente_in_changes(path, changes):
+        for change in changes:
+            if change['new_path'] == path:
+                return True
+
+        return False
+
+    def get_comments(
+            self,
+            scanner_home,
+            path_source,
+            project_id,
+            merge_request_id,
+            rules,
+            changes,
+            rules_deny,
+            sonar_extra_args,
+            sonar_scanner_pre_command
+    ):
         __PROJECT_KEY = f"code-review-{project_id}-{merge_request_id}"
 
         self.delete_project(__PROJECT_KEY)
         self.create_project(__PROJECT_KEY, __PROJECT_KEY)
 
         if os.path.exists(path_source):
-            self.run_scanner(__PROJECT_KEY, scanner_home, path_source)
+            if len(sonar_scanner_pre_command) > 0:
+                os.system(f"cd {path_source} && {sonar_scanner_pre_command}")
+            self.run_scanner(__PROJECT_KEY, scanner_home, path_source, changes, sonar_extra_args)
 
         while not self.is_queue_empty():
             sleep(1)
@@ -82,7 +109,12 @@ class SonarClient:
         comments = []
 
         for issue_source in issues_source:
-            if issue_source['rule'] not in rules:
+            issue_rule = issue_source['rule']
+
+            if len(rules) > 0 and issue_rule not in rules:
+                continue
+
+            if issue_rule in rules_deny:
                 continue
 
             if 'hash' not in issue_source:
@@ -94,8 +126,10 @@ class SonarClient:
             issue_path = issue_path[issue_path.index(":") + 1:]
             issue_start_line = issue_source['textRange']['startLine']
             issue_end_line = issue_source['textRange']['endLine']
-            issue_rule = issue_source['rule']
             issue_line = issue_source['line']
+
+            if not self.is_path_presente_in_changes(issue_path, changes):
+                continue
 
             details = [
                 f"Type: {issue_rule}<br>",
